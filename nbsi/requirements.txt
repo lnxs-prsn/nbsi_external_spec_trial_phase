@@ -1,0 +1,24 @@
+# NBSI v1.0 External Architecture — Requirements
+# Core (required)
+networkx>=3.2
+numpy>=1.26
+scipy>=1.12
+
+# Embeddings (required for production; StubEmbedder used if unavailable)
+sentence-transformers>=2.6
+
+# LLM clients (required for extraction pipeline)
+anthropic>=0.25
+openai>=1.0
+google-generativeai>=0.5
+
+# API layer
+fastapi>=0.110
+uvicorn>=0.29
+pydantic>=2.0
+
+# Testing
+pytest>=8.0
+
+# Optional: faster vector search (drop-in replacement for linear search in StructuralNodeLibrary)
+# faiss-cpu>=1.7
