@@ -156,6 +156,9 @@ def run_demo(text: str, query: str):
     print("\n" + "-"*65)
     print("  Speculation demo")
     print("-"*65)
+    # commented out is for the initial test
+    # spec_statement = "quantum computing will make current AI methods obsolete"
+    # below is for the document nbsi_v1_lightweight/nbsi/NBSI_External_Paper.docx  specific statement
     spec_statement = "the session graph should persist across sessions for better continuity"
     print(f"\n  Adding: \"{spec_statement}\"")
     spec = session.speculate(spec_statement)

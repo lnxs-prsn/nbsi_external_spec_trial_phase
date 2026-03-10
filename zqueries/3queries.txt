@@ -1,0 +1,224 @@
+PYTHONPATH=. python nbsi/demo.py nbsi/NBSI_External_Paper.docx "what is the structural layer"
+Loaded: nbsi/NBSI_External_Paper.docx (19724 chars)
+
+=================================================================
+  NBSI v1.0 Lightweight — Demo
+  spaCy extraction · MiniLM embedding · No API calls
+=================================================================
+
+[1/4] Loading MiniLM embedder...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights: 100%|██████████████████████████████████████████████████████████████████████████████████████| 103/103 [00:00<00:00, 2829.70it/s]
+BertModel LOAD REPORT from: sentence-transformers/all-MiniLM-L6-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED    :can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+      Ready (12.2s)
+
+[2/4] Extracting graph from text (spaCy + MiniLM)...
+      838 nodes · 465 edges extracted (5.3s)
+
+[3/4] Building session graph...
+      Graph built: 645 nodes · 454 edges (7.0s)
+      Structural nodes firing: 0
+      Observation nodes created: 645
+
+[4/4] Querying: "what is the structural layer"
+      5 paths found (50.9ms)
+
+  Reasoning paths (highest conductivity first):
+  ------------------------------------------------------------
+
+  Path 1  [0.442 conductivity · 4 hops]
+  3.2 the structural layer → detail → the session graph → weak bridges → previously dominant paths
+
+  Path 2  [0.430 conductivity · 5 hops]
+  3.2 the structural layer → detail → the structural node library → patterns → boundaries → new observation nodes
+
+  Path 3  [0.416 conductivity · 4 hops]
+  3.2 the structural layer → detail → the session graph → the source → an arbitrary threshold
+
+  Path 4  [0.410 conductivity · 5 hops]
+  3.2 the structural layer → detail → the structural node library → patterns → boundaries → what structural patterns
+
+  Path 5  [0.410 conductivity · 5 hops]
+  3.2 the structural layer → detail → the session graph → source text → ingestion → stability
+
+-----------------------------------------------------------------
+  Speculation demo
+-----------------------------------------------------------------
+
+  Adding: "quantum computing will make current AI methods obsolete"
+  Spec ID: 4161c529-23f...
+  Edges affected: 13
+
+  Re-querying after speculation: "what is the structural layer"
+  Top path conductivity after:  0.442
+  Top path conductivity before: 0.442
+  Change: unchanged (+0.000) — SEM rewired the graph
+
+  Rolling back speculation...
+  Rollback tolerance: 0.00e+00 (must be < 1e-9: True)
+
+-----------------------------------------------------------------
+  Session ended.
+  Graph destroyed:          True
+  Nodes remaining in graph: 0
+  Structural library:       0 nodes (persists)
+=================================================================
+
+(nbsi) mr@n4cryp6yt0chipmt6gy-1:~/Desktop/python/projects/nbsi/experiment/nbsi_external_spec_trial_phase/nbsi_v1_lightweight$ 
+
+
+
+
+PYTHONPATH=. python nbsi/demo.py nbsi/NBSI_External_Paper.docx "how does speculation change the graph"
+Loaded: nbsi/NBSI_External_Paper.docx (19724 chars)
+
+=================================================================
+  NBSI v1.0 Lightweight — Demo
+  spaCy extraction · MiniLM embedding · No API calls
+=================================================================
+
+[1/4] Loading MiniLM embedder...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights: 100%|██████████████████████████████████████████████████████████████████████████████████████| 103/103 [00:00<00:00, 3194.87it/s]
+BertModel LOAD REPORT from: sentence-transformers/all-MiniLM-L6-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED    :can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+      Ready (11.8s)
+
+[2/4] Extracting graph from text (spaCy + MiniLM)...
+      838 nodes · 465 edges extracted (5.2s)
+
+[3/4] Building session graph...
+      Graph built: 645 nodes · 454 edges (5.7s)
+      Structural nodes firing: 0
+      Observation nodes created: 645
+
+[4/4] Querying: "how does speculation change the graph"
+      3 paths found (44.6ms)
+
+  Reasoning paths (highest conductivity first):
+  ------------------------------------------------------------
+
+  Path 1  [0.490 conductivity · 2 hops]
+  the speculative node → a radius → sem_radius
+
+  Path 2  [0.385 conductivity · 1 hop]
+  its pre-speculation state → trace
+
+  Path 3  [0.385 conductivity · 1 hop]
+  the speculative node → betweenness centrality assessment
+
+-----------------------------------------------------------------
+  Speculation demo
+-----------------------------------------------------------------
+
+  Adding: "quantum computing will make current AI methods obsolete"
+  Spec ID: 6e71ec92-238...
+  Edges affected: 13
+
+  Re-querying after speculation: "how does speculation change the graph"
+  Top path conductivity after:  0.490
+  Top path conductivity before: 0.490
+  Change: unchanged (+0.000) — SEM rewired the graph
+
+  Rolling back speculation...
+  Rollback tolerance: 0.00e+00 (must be < 1e-9: True)
+
+-----------------------------------------------------------------
+  Session ended.
+  Graph destroyed:          True
+  Nodes remaining in graph: 0
+  Structural library:       0 nodes (persists)
+=================================================================
+
+(nbsi) mr@n4cryp6yt0chipmt6gy-1:~/Desktop/python/projects/nbsi/experiment/nbsi_external_spec_trial_phase/nbsi_v1_lightweight$ 
+
+
+
+
+
+
+(nbsi) mr@n4cryp6yt0chipmt6gy-1:~/Desktop/python/projects/nbsi/experiment/nbsi_external_spec_trial_phase/nbsi_v1_lightweight$ PYTHONPATH=. python nbsi/demo.py nbsi/NBSI_External_Paper.docx "what happens at session end"
+Loaded: nbsi/NBSI_External_Paper.docx (19724 chars)
+
+=================================================================
+  NBSI v1.0 Lightweight — Demo
+  spaCy extraction · MiniLM embedding · No API calls
+=================================================================
+
+[1/4] Loading MiniLM embedder...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights: 100%|██████████████████████████████████████████████████████████████████████████████████████| 103/103 [00:00<00:00, 3071.88it/s]
+BertModel LOAD REPORT from: sentence-transformers/all-MiniLM-L6-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED    :can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+      Ready (11.4s)
+
+[2/4] Extracting graph from text (spaCy + MiniLM)...
+      838 nodes · 465 edges extracted (5.2s)
+
+[3/4] Building session graph...
+      Graph built: 645 nodes · 454 edges (6.1s)
+      Structural nodes firing: 0
+      Observation nodes created: 645
+
+[4/4] Querying: "what happens at session end"
+      5 paths found (43.7ms)
+
+  Reasoning paths (highest conductivity first):
+  ------------------------------------------------------------
+
+  Path 1  [0.595 conductivity · 1 hop]
+  session → sem propagation
+
+  Path 2  [0.490 conductivity · 5 hops]
+  session end → the library → patterns → boundaries → new observation nodes → structural status
+
+  Path 3  [0.461 conductivity · 4 hops]
+  session end → the library → patterns → boundaries → what structural patterns
+
+  Path 4  [0.452 conductivity · 3 hops]
+  session end → the library → patterns → priorities
+
+  Path 5  [0.452 conductivity · 3 hops]
+  session end → the library → patterns → all prior sessions
+
+-----------------------------------------------------------------
+  Speculation demo
+-----------------------------------------------------------------
+
+  Adding: "quantum computing will make current AI methods obsolete"
+  Spec ID: 2d307738-7ad...
+  Edges affected: 13
+
+  Re-querying after speculation: "what happens at session end"
+  Top path conductivity after:  0.595
+  Top path conductivity before: 0.595
+  Change: unchanged (+0.000) — SEM rewired the graph
+
+  Rolling back speculation...
+  Rollback tolerance: 0.00e+00 (must be < 1e-9: True)
+
+-----------------------------------------------------------------
+  Session ended.
+  Graph destroyed:          True
+  Nodes remaining in graph: 0
+  Structural library:       0 nodes (persists)
+=================================================================
+
+(nbsi) mr@n4cryp6yt0chipmt6gy-1:~/Desktop/python/projects/nbsi/experiment/nbsi_external_spec_trial_phase/nbsi_v1_lightweight$
+
