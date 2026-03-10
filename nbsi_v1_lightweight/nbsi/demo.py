@@ -156,7 +156,7 @@ def run_demo(text: str, query: str):
     print("\n" + "-"*65)
     print("  Speculation demo")
     print("-"*65)
-    spec_statement = "quantum computing will make current AI methods obsolete"
+    spec_statement = "the session graph should persist across sessions for better continuity"
     print(f"\n  Adding: \"{spec_statement}\"")
     spec = session.speculate(spec_statement)
     print(f"  Spec ID: {spec['spec_id'][:12]}...")

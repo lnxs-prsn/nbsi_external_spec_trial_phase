@@ -1,0 +1,53 @@
+PHASE 1
+set up and run          path might not be same with your machine
+PYTHONPATH=. python nbsi/run_tests.py 
+result should 33/33 test passed 
+
+
+PHASE 2
+Add this to phase 2:
+
+---
+
+**Phase 2 — Real Embeddings and Extraction**
+
+**Objective:** Replace StubEmbedder with RealEmbedder and wire in spaCy extraction pipeline. No API calls. No GPU.
+
+**Dependencies installed:**
+- spacy 3.8.11
+- sentence-transformers 5.2.3
+- en_core_web_sm 3.8.0
+- python-docx 1.2.0 (for reading .docx files)
+
+**Environment note:** Python 3.14 incompatible with spaCy. Resolved by installing Python 3.12.12 via uv and recreating venv. pyproject.toml requires-python changed from >=3.14 to >=3.11.
+
+**New files added:**
+- `nbsi/ingestion/spacy_extractor.py` — spaCy NLP pipeline producing ConceptNodes and ConceptEdges from plain text
+- `nbsi/embedder.py` — RealEmbedder class added (MiniLM-L6-v2, 80MB, 384-dim, CPU only)
+
+**Bugs found and fixed during real-document testing:**
+
+1. `sem/propagator.py` — Speculative node was added as an island with no edges. BFS never fired. Fixed by anchoring spec node to top-5 similar existing nodes before propagation.
+
+2. `graph/concept_graph.py` — add_edge accepted edges whose endpoints did not exist in _nodes, causing hop_score to return 0.0 and beam search to find 0 paths. Fixed by guarding both endpoints. Also fixed KeyError in prune_by_betweenness on large documents.
+
+3. `session/session.py` — ingest_graph used original node IDs for edges after add_node had remapped merged labels to canonical IDs. Fixed by tracking id_remap during ingestion and rewriting edge endpoints before adding.
+
+**Test document:** NBSI_External_Paper.docx (19724 chars)
+
+**Results on white paper:**
+
+| Query | Paths | Top conductivity |
+|---|---|---|
+| what is the structural layer | 5 | 0.442 |
+| how does speculation change the graph | 3 | 0.490 |
+| what happens at session end | 5 | 0.595 |
+| should the session graph persist | 5 | 0.490 |
+
+**SEM verified:**
+- 46 edges affected on semantically relevant speculation
+- Conductivity change: -0.058 on query directly related to speculation
+- Direction correct: graph resisted speculation contradicting source material
+- Rollback tolerance: 0.00e+00
+
+**33/33 tests still passing after all fixes.**

@@ -1,0 +1,149 @@
+PYTHONPATH=. python nbsi/demo.py nbsi/NBSI_External_Paper.docx "what happens at session end"
+Loaded: nbsi/NBSI_External_Paper.docx (19724 chars)
+
+=================================================================
+  NBSI v1.0 Lightweight — Demo
+  spaCy extraction · MiniLM embedding · No API calls
+=================================================================
+
+[1/4] Loading MiniLM embedder...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights: 100%|██████████████████████████████████████████████████████████████████████████████████████| 103/103 [00:00<00:00, 3120.13it/s]
+BertModel LOAD REPORT from: sentence-transformers/all-MiniLM-L6-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED    :can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+      Ready (11.3s)
+
+[2/4] Extracting graph from text (spaCy + MiniLM)...
+      838 nodes · 465 edges extracted (5.1s)
+
+[3/4] Building session graph...
+      Graph built: 645 nodes · 454 edges (6.0s)
+      Structural nodes firing: 0
+      Observation nodes created: 645
+
+[4/4] Querying: "what happens at session end"
+      5 paths found (42.3ms)
+
+  Reasoning paths (highest conductivity first):
+  ------------------------------------------------------------
+
+  Path 1  [0.595 conductivity · 1 hop]
+  session → sem propagation
+
+  Path 2  [0.490 conductivity · 5 hops]
+  session end → the library → patterns → boundaries → new observation nodes → structural status
+
+  Path 3  [0.461 conductivity · 4 hops]
+  session end → the library → patterns → boundaries → what structural patterns
+
+  Path 4  [0.452 conductivity · 3 hops]
+  session end → the library → patterns → priorities
+
+  Path 5  [0.452 conductivity · 3 hops]
+  session end → the library → patterns → all prior sessions
+
+-----------------------------------------------------------------
+  Speculation demo
+-----------------------------------------------------------------
+
+  Adding: "the session graph should persist across sessions for better continuity"
+  Spec ID: 60b01564-e65...
+  Edges affected: 46
+
+  Re-querying after speculation: "what happens at session end"
+  Top path conductivity after:  0.595
+  Top path conductivity before: 0.595
+  Change: unchanged (+0.000) — SEM rewired the graph
+
+  Rolling back speculation...
+  Rollback tolerance: 0.00e+00 (must be < 1e-9: True)
+
+-----------------------------------------------------------------
+  Session ended.
+  Graph destroyed:          True
+  Nodes remaining in graph: 0
+  Structural library:       0 nodes (persists)
+=================================================================
+
+
+
+
+
+
+
+PYTHONPATH=. python nbsi/demo.py nbsi/NBSI_External_Paper.docx "should the session graph persist"
+Loaded: nbsi/NBSI_External_Paper.docx (19724 chars)
+
+=================================================================
+  NBSI v1.0 Lightweight — Demo
+  spaCy extraction · MiniLM embedding · No API calls
+=================================================================
+
+[1/4] Loading MiniLM embedder...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights: 100%|██████████████████████████████████████████████████████████████████████████████████████| 103/103 [00:00<00:00, 3032.08it/s]
+BertModel LOAD REPORT from: sentence-transformers/all-MiniLM-L6-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED    :can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+      Ready (11.2s)
+
+[2/4] Extracting graph from text (spaCy + MiniLM)...
+      838 nodes · 465 edges extracted (5.3s)
+
+[3/4] Building session graph...
+      Graph built: 645 nodes · 454 edges (5.7s)
+      Structural nodes firing: 0
+      Observation nodes created: 645
+
+[4/4] Querying: "should the session graph persist"
+      5 paths found (41.4ms)
+
+  Reasoning paths (highest conductivity first):
+  ------------------------------------------------------------
+
+  Path 1  [0.490 conductivity · 2 hops]
+  the session graph → weak bridges → previously dominant paths
+
+  Path 2  [0.445 conductivity · 5 hops]
+  the session graph → source text → ingestion → stability → the top paths → sample queries
+
+  Path 3  [0.434 conductivity · 2 hops]
+  the session graph → the source → an arbitrary threshold
+
+  Path 4  [0.404 conductivity · 5 hops]
+  the session graph → source text → ingestion → stability → threshold → ensemble mode
+
+  Path 5  [0.390 conductivity · 5 hops]
+  the session graph → source text → structural nodes → speculation → sem → a speculation
+
+-----------------------------------------------------------------
+  Speculation demo
+-----------------------------------------------------------------
+
+  Adding: "the session graph should persist across sessions for better continuity"
+  Spec ID: 3c88c05b-5e4...
+  Edges affected: 46
+
+  Re-querying after speculation: "should the session graph persist"
+  Top path conductivity after:  0.432
+  Top path conductivity before: 0.490
+  Change: ↓ decreased (-0.058) — SEM rewired the graph
+
+  Rolling back speculation...
+  Rollback tolerance: 0.00e+00 (must be < 1e-9: True)
+
+-----------------------------------------------------------------
+  Session ended.
+  Graph destroyed:          True
+  Nodes remaining in graph: 0
+  Structural library:       0 nodes (persists)
+=================================================================
