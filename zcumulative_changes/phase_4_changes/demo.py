@@ -1,15 +1,10 @@
 """
-NBSI v1.0 Lightweight — Demo (Phase 4: pipeline ingestion)
+NBSI v1.0 Lightweight — Demo (Phase 3: with synthesis)
 
-Ingests a document using the Phase 4 pipeline:
-    document_reader  → structure-aware reading (headings, sections)
-    chunker          → splits into focused chunks before extraction
-    metadata_nodes   → title/heading anchors injected into graph
-    spacy_extractor  → extracts concepts per chunk
-    session          → unified graph across all chunks
-
-For plain text passed as SAMPLE_TEXT, the old direct extraction
-path is still used (no file to read, no structure to detect).
+Ingests a document using spaCy + MiniLM.
+Queries the resulting graph.
+Returns real reasoning paths with conductivity scores.
+Narrates the paths in natural language using a local LLM.
 
 NO API calls. NO GPU required.
 
@@ -19,16 +14,13 @@ Usage:
     python demo.py myfile.txt "your query"       # Custom query
     python demo.py myfile.txt "query" --no-synth # Skip synthesis
 
-Supported file formats:
-    .txt .md .html .htm .pdf .docx .py .js .ts .rst
-
 Requirements (core):
     uv pip install spacy sentence-transformers networkx numpy scipy
     python -m spacy download en_core_web_sm
 
 Requirements (synthesis):
     uv pip install llama-cpp-python
-    # Download model to ~/nbsi-models/ -- see README
+    # Download model to ~/nbsi-models/ — see README
 """
 import sys
 import os
@@ -36,6 +28,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Default model path — change if you saved the model elsewhere
 DEFAULT_MODEL = os.path.expanduser(
     "~/nbsi-models/qwen2.5-1.5b-instruct-q4_k_m.gguf"
 )
@@ -68,15 +61,36 @@ under human control. These safety measures are critical as AI becomes more capab
 """
 
 
-def run_demo(query: str, use_synthesis: bool = True,
-             file_path: str = None, sample_text: str = None):
+def load_text(path: str) -> str:
+    ext = os.path.splitext(path)[1].lower()
+    if ext == '.pdf':
+        try:
+            from pdfminer.high_level import extract_text
+            return extract_text(path)
+        except ImportError:
+            print("[!] pdfminer.six not installed. Install with: uv pip install pdfminer.six")
+            sys.exit(1)
+    elif ext == '.docx':
+        try:
+            from docx import Document
+            doc = Document(path)
+            return '\n'.join(p.text for p in doc.paragraphs if p.text.strip())
+        except ImportError:
+            print("[!] python-docx not installed. Install with: uv pip install python-docx")
+            sys.exit(1)
+    else:
+        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+            return f.read()
+
+
+def run_demo(text: str, query: str, use_synthesis: bool = True):
     print("\n" + "="*65)
-    print("  NBSI v1.0 Lightweight -- Demo")
+    print("  NBSI v1.0 Lightweight — Demo")
     print("  spaCy · MiniLM · Local graph reasoning · llama-cpp")
     print("="*65)
 
-    # -- [1/4] Load embedder and extractor
-    print("\n[1/4] Loading MiniLM embedder...")
+    # ── [1/5] Load embedder ───────────────────────────────────────────
+    print("\n[1/5] Loading MiniLM embedder...")
     t0 = time.time()
     try:
         from nbsi.embedder import RealEmbedder
@@ -86,6 +100,9 @@ def run_demo(query: str, use_synthesis: bool = True,
         print(f"\n[!] {e}")
         sys.exit(1)
 
+    # ── [2/5] Extract nodes and edges ────────────────────────────────
+    print("\n[2/5] Extracting graph from text (spaCy + MiniLM)...")
+    t0 = time.time()
     try:
         from nbsi.ingestion.spacy_extractor import SpacyExtractor
         extractor = SpacyExtractor()
@@ -93,7 +110,16 @@ def run_demo(query: str, use_synthesis: bool = True,
         print(f"\n[!] {e}")
         sys.exit(1)
 
-    # -- [2/4] Ingest
+    nodes, edges = extractor.extract(text, embedder)
+    print(f"      {len(nodes)} nodes · {len(edges)} edges ({time.time()-t0:.1f}s)")
+
+    if not nodes:
+        print("\n[!] No nodes extracted. Text may be too short.")
+        sys.exit(1)
+
+    # ── [3/5] Build session graph ─────────────────────────────────────
+    print("\n[3/5] Building session graph...")
+    t0 = time.time()
     from nbsi.config import Config
     from nbsi.lifecycle.structural_library import StructuralNodeLibrary
     from nbsi.session.session import NBSISession
@@ -104,49 +130,17 @@ def run_demo(query: str, use_synthesis: bool = True,
     config.TOP_K_PATHS = 5
 
     library = StructuralNodeLibrary()
-    session = NBSISession(structural_library=library, embedder=embedder,
-                          config=config)
+    session = NBSISession(structural_library=library, embedder=embedder, config=config)
+    result  = session.ingest_graph(nodes, edges)
 
-    if file_path:
-        # Pipeline path: document_reader + chunker + metadata_nodes + extract
-        print(f"\n[2/4] Ingesting {os.path.basename(file_path)} via pipeline...")
-        t0 = time.time()
-        from nbsi.ingestion.pipeline import ingest_documents
-        report = ingest_documents(session, extractor, [file_path], verbose=False)
+    print(f"      Graph: {result['nodes']} nodes · {result['edges']} edges ({time.time()-t0:.1f}s)")
+    print(f"      Structural nodes firing:    {result['structural_nodes_firing']}")
+    print(f"      Observation nodes created:  {result['observation_nodes_created']}")
 
-        if report.files_failed:
-            print(f"\n[!] Failed to ingest {file_path}")
-            print(f"    {report.results[0].error}")
-            sys.exit(1)
-
-        r = report.results[0]
-        print(f"      {r.chunks} chunks · {r.nodes_added} nodes · "
-              f"{r.edges_added} edges ({time.time()-t0:.1f}s)")
-        print(f"      Format: {r.format}")
-
-    else:
-        # Direct path: sample text has no file structure to detect
-        print("\n[2/4] Extracting graph from sample text (spaCy + MiniLM)...")
-        t0 = time.time()
-        nodes, edges = extractor.extract(sample_text, embedder)
-        print(f"      {len(nodes)} nodes · {len(edges)} edges ({time.time()-t0:.1f}s)")
-
-        if not nodes:
-            print("\n[!] No nodes extracted. Text may be too short.")
-            sys.exit(1)
-
-        print("\n      Building session graph...")
-        t0 = time.time()
-        result = session.ingest_graph(nodes, edges)
-        print(f"      Graph: {result['nodes']} nodes · {result['edges']} edges "
-              f"({time.time()-t0:.1f}s)")
-        print(f"      Structural nodes firing:    {result['structural_nodes_firing']}")
-        print(f"      Observation nodes created:  {result['observation_nodes_created']}")
-
-    # -- [3/4] Query
-    print(f"\n[3/4] Querying: \"{query}\"")
-    t0      = time.time()
-    paths   = session.query(query)
+    # ── [4/5] Query ───────────────────────────────────────────────────
+    print(f"\n[4/5] Querying: \"{query}\"")
+    t0     = time.time()
+    paths  = session.query(query)
     elapsed = time.time() - t0
 
     print(f"      {len(paths)} paths found ({elapsed*1000:.1f}ms)\n")
@@ -157,16 +151,16 @@ def run_demo(query: str, use_synthesis: bool = True,
         print("  Reasoning paths (highest conductivity first):")
         print("  " + "-"*60)
         for i, p in enumerate(paths, 1):
-            chain = " -> ".join(p["path"])
+            chain = " → ".join(p["path"])
             conf  = p["conductivity"]
             hops  = p["length"] - 1
             print(f"\n  Path {i}  [{conf:.3f} conductivity · {hops} hop{'s' if hops!=1 else ''}]")
             print(f"  {chain}")
 
-    # -- [4/4] Synthesis
+    # ── [5/5] Synthesis ───────────────────────────────────────────────
     if use_synthesis and paths:
         print("\n" + "="*65)
-        print("  Synthesis -- local LLM narration")
+        print("  Synthesis — local LLM narration")
         print("="*65)
 
         model_path = os.environ.get("NBSI_MODEL", DEFAULT_MODEL)
@@ -183,10 +177,11 @@ def run_demo(query: str, use_synthesis: bool = True,
                 synth = Synthesiser(model_path, n_threads=4, verbose=False)
 
                 print(f"\n  Narrating paths for: \"{query}\"")
-                print("  (this takes 20-40 seconds on CPU -- streaming output below)\n")
+                print("  (this takes 20-40 seconds on CPU — streaming output below)\n")
                 print("  " + "-"*60)
                 print("  ", end="", flush=True)
 
+                # Stream tokens as they generate
                 for token in synth.narrate_streaming(query, paths):
                     print(token, end="", flush=True)
                 print("\n  " + "-"*60)
@@ -195,7 +190,7 @@ def run_demo(query: str, use_synthesis: bool = True,
                 print("\n  [!] llama-cpp-python not installed.")
                 print("  Install with: uv pip install llama-cpp-python")
 
-    # -- Speculation demo
+    # ── Speculation demo ──────────────────────────────────────────────
     print("\n" + "="*65)
     print("  Speculation demo")
     print("="*65)
@@ -212,15 +207,15 @@ def run_demo(query: str, use_synthesis: bool = True,
         if paths:
             print(f"  Top path conductivity before: {paths[0]['conductivity']:.3f}")
             delta     = paths_after[0]['conductivity'] - paths[0]['conductivity']
-            direction = "up increased" if delta > 0 else "down decreased" if delta < 0 else "unchanged"
-            print(f"  Change: {direction} ({delta:+.3f}) -- SEM rewired the graph")
+            direction = "↑ increased" if delta > 0 else "↓ decreased" if delta < 0 else "unchanged"
+            print(f"  Change: {direction} ({delta:+.3f}) — SEM rewired the graph")
 
     print("\n  Rolling back speculation...")
     rollback = session.rollback_speculation(spec['spec_id'])
     print(f"  Rollback tolerance: {rollback['rollback_tolerance']:.2e} "
           f"(must be < 1e-9: {rollback['tolerance_ok']})")
 
-    # -- Session end
+    # ── Session end ───────────────────────────────────────────────────
     print("\n" + "="*65)
     summary = session.end_session()
     print(f"  Session ended.")
@@ -231,19 +226,20 @@ def run_demo(query: str, use_synthesis: bool = True,
 
 
 if __name__ == "__main__":
-    file_arg  = sys.argv[1] if len(sys.argv) > 1 else None
-    query_arg = sys.argv[2] if len(sys.argv) > 2 else None
-    no_synth  = "--no-synth" in sys.argv
+    text_arg    = sys.argv[1] if len(sys.argv) > 1 else None
+    query_arg   = sys.argv[2] if len(sys.argv) > 2 else None
+    no_synth    = "--no-synth" in sys.argv
 
-    if file_arg and not file_arg.startswith("--"):
-        if not os.path.exists(file_arg):
-            print(f"[!] File not found: {file_arg}")
+    if text_arg and not text_arg.startswith("--"):
+        if not os.path.exists(text_arg):
+            print(f"[!] File not found: {text_arg}")
             sys.exit(1)
-        print(f"Loaded: {file_arg}")
-        query = query_arg or "what are the main concepts in this document"
-        run_demo(query, use_synthesis=not no_synth, file_path=file_arg)
+        text = load_text(text_arg)
+        print(f"Loaded: {text_arg} ({len(text)} chars)")
     else:
+        text = SAMPLE_TEXT
         print("Using built-in sample text (AI overview).")
         print("To use your own: python demo.py yourfile.txt")
-        query = query_arg or "what are the challenges facing AI development"
-        run_demo(query, use_synthesis=not no_synth, sample_text=SAMPLE_TEXT)
+
+    query = query_arg or "what are the challenges facing AI development"
+    run_demo(text, query, use_synthesis=not no_synth)
