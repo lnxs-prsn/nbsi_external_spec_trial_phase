@@ -202,6 +202,15 @@ The fixed files are also available individually in `zfixed1/` and `zfixed2/`.
 
 ---
 
+Each completed phase has its own branch in this repository.
+Checkout a specific phase to see the project at that exact stage:
+
+git checkout main      # Phases 1 and 2 — stable base
+git checkout phase_3   # Phase 3 — synthesis added
+
+---
+
+
 ## Architecture overview
 
 ```
