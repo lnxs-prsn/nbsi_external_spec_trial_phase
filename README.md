@@ -33,7 +33,7 @@ nbsi_external_spec_trial_phase/
 │       ├── demo.py              #   Start here — run against any document
 │       ├── ingestion/           #   spaCy extraction pipeline
 │       │   └── spacy_extractor.py
-│       ├── synthesis/           #   llama-cpp synthesis (Phase 3 — not yet built)
+│       ├── synthesis/           #   llama-cpp synthesis (Phase 3 — complete)
 │       ├── os_integration/      #   File watcher (Phase 5 — not yet built)
 │       └── ...                  #   All core engine files (updated versions)
 │
@@ -124,7 +124,14 @@ source .venv/bin/activate
 uv pip install spacy sentence-transformers networkx numpy scipy
 uv pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 ```
-
+```bash
+# Phase 3 — synthesis (optional but recommended)
+sudo dnf install -y gcc gcc-c++ cmake make   # Fedora
+# sudo apt install -y build-essential cmake  # Ubuntu/Debian
+uv pip install llama-cpp-python
+mkdir -p ~/nbsi-models
+wget -P ~/nbsi-models https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf
+```
 ### Run the demo
 
 ```bash
@@ -136,6 +143,13 @@ PYTHONPATH=. python demo.py yourfile.txt
 
 # Your own file with your own query
 PYTHONPATH=. python demo.py yourfile.txt "your question here"
+
+# With synthesis (default — requires model downloaded above)
+PYTHONPATH=. python demo.py yourfile.txt "your question"
+
+# Without synthesis (faster, no model needed)
+PYTHONPATH=. python demo.py yourfile.txt "your question" --no-synth
+
 ```
 
 ### Verify core tests still pass
@@ -194,7 +208,7 @@ The fixed files are also available individually in `zfixed1/` and `zfixed2/`.
 |---|---|---|
 | 1 | ✅ Complete | Core engine — 33/33 tests passing |
 | 2 | ✅ Complete | Real embeddings + spaCy extraction + bug fixes |
-| 3 | 🔲 Pending | Synthesis — llama-cpp local narration |
+| 3 | ✅ Complete | Synthesis — llama-cpp local narration (Qwen2.5-1.5B Q4) |
 | 4 | 🔲 Pending | Document reader expansion |
 | 5 | 🔲 Pending | OS file watcher |
 | 6 | 🔲 Pending | Persistence across sessions |
