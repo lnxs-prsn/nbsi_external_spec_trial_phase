@@ -1,0 +1,31 @@
+# NBSI v1.0 Lightweight — Requirements
+# ─────────────────────────────────────
+# CORE (required for run_tests.py — no GPU, no API)
+networkx>=3.2
+numpy>=1.26
+scipy>=1.12
+
+# LIGHTWEIGHT STACK (required for demo.py — no GPU, no API)
+spacy>=3.7
+sentence-transformers>=2.6
+
+# spaCy language model — install separately after spacy:
+#   python -m spacy download en_core_web_sm
+
+# OPTIONAL — document reading in demo.py
+# pdfminer.six          # PDF files
+# python-docx           # DOCX files
+# icalendar             # Calendar .ics files
+
+# OPTIONAL — synthesis layer (Section 4 of build plan)
+# llama-cpp-python      # Local LLM narration — no API needed
+# watchdog              # OS file watcher
+
+# OPTIONAL — full LLM extraction pipeline (replaces spaCy)
+# anthropic>=0.25
+# openai>=1.0
+
+# OPTIONAL — API layer
+# fastapi>=0.110
+# uvicorn>=0.29
+# pydantic>=2.0

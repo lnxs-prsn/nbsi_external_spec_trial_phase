@@ -4,7 +4,7 @@ NBSI v1.0 — Test Runner (no pytest required)
 Runs all tests using only stdlib. Same test logic as test_nbsi.py
 but structured as a standalone runner.
 
-Usage: PYTHONPATH=. python3 run_tests.py
+Usage: python3 run_tests.py
 """
 import sys
 import os
