@@ -140,20 +140,28 @@ class Synthesiser:
         return "\n".join(lines)
 
     def _build_prompt(self, query: str, path_text: str) -> str:
+        # Phi-3 format
+        if "phi" in self.llm.model_path.lower():
+            return (
+                "<|user|>\n"
+                f"Question: {query}\n\n"
+                f"Reasoning paths from a knowledge graph:\n{path_text}\n\n"
+                "Based only on these paths, explain what they reveal about the question. "
+                "State what the strongest path shows. Cite the confidence score. "
+                "Do not add knowledge beyond what the paths contain.\n"
+                "<|end|>\n"
+                "<|assistant|>\n"
+            )
+        # Qwen / default format
         return (
             "<|im_start|>system\n"
             "You are reading reasoning paths from a knowledge graph built from a document.\n"
-            "Each path shows how concepts in the document connect to each other.\n"
-            "Higher confidence means the connection is more strongly grounded in the source.\n"
-            "Your job is to narrate what these paths mean — not to add outside knowledge.\n"
-            "Be concise. Be grounded. Flag uncertainty if the paths are weak or ambiguous.\n"
+            "Your job is to narrate what these paths mean. Be concise and grounded.\n"
             "<|im_end|>\n"
             "<|im_start|>user\n"
             f"Question: {query}\n\n"
-            f"Reasoning paths found in the document:\n{path_text}\n\n"
-            "Based only on these paths, explain what they show about the question.\n"
-            "State what the strongest path reveals. Note the confidence level.\n"
-            "If the paths do not clearly answer the question, say so.\n"
+            f"Reasoning paths:\n{path_text}\n\n"
+            "Explain what these paths reveal. State the strongest path and its confidence.\n"
             "<|im_end|>\n"
             "<|im_start|>assistant\n"
         )

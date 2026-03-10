@@ -124,6 +124,7 @@ source .venv/bin/activate
 uv pip install spacy sentence-transformers networkx numpy scipy
 uv pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 ```
+
 ```bash
 # Phase 3 — synthesis (optional but recommended)
 sudo dnf install -y gcc gcc-c++ cmake make   # Fedora
@@ -132,6 +133,19 @@ uv pip install llama-cpp-python
 mkdir -p ~/nbsi-models
 wget -P ~/nbsi-models https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf
 ```
+
+```bash
+# On Raspberry Pi 5 — use Phi-3 Mini instead (better quality, fits in 14GB)
+# sudo apt install -y build-essential cmake
+uv pip install llama-cpp-python
+mkdir -p ~/nbsi-models
+wget -P ~/nbsi-models https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main/Phi-3-mini-4k-instruct-q4.gguf
+
+# Run with Phi-3
+NBSI_MODEL=~/nbsi-models/Phi-3-mini-4k-instruct-q4.gguf \
+PYTHONPATH=. python demo.py yourfile.txt "your question"
+```
+
 ### Run the demo
 
 ```bash
@@ -180,10 +194,21 @@ Tested against the NBSI External Architecture Paper (19724 chars, 838 nodes extr
 | should the session graph persist | 5 | 0.490 |
 
 **SEM verified:**
+
 - 46 edges affected on semantically relevant speculation
 - Conductivity change: -0.058 confirmed
 - Direction correct: graph resisted speculation contradicting source material
 - Rollback tolerance: 0.00e+00
+
+---
+
+**Verified on Raspberry Pi 5 (Phi-3 Mini 3.8B Q4):**
+
+- 33/33 tests passing
+- All 5 paths narrated individually with confidence scores cited
+- Strongest path correctly identified
+- Query time: 95ms · MiniLM load: 7.1s (cached)
+- The synthesiser auto-detects Phi-3 from the model filename
 
 ---
 
