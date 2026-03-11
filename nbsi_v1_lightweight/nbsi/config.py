@@ -40,8 +40,8 @@ class Config:
     REACTIVATION_HIGH_THRESHOLD: float = 0.75
     REFINEMENT_ALPHA: float = 0.05
     MAX_OBSERVATION_SESSIONS: int = 20      # Prune if never stabilises
-    ENTITY_SPECIFICITY_THRESHOLD: float = 0.60
-    DIVERSITY_THRESHOLD: float = 0.30
+    ENTITY_SPECIFICITY_THRESHOLD: float = 1.01  # change back to 0.60
+    DIVERSITY_THRESHOLD: float = 0.0           # change back to 0.30
 
 
 # Singleton default config
