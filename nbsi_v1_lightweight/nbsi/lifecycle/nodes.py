@@ -52,17 +52,11 @@ class ObservationNode:
         self.example_labels = (self.example_labels + [label])[-5:]  # Ring buffer
         self._entity_firing_counts[entity_id] = \
             self._entity_firing_counts.get(entity_id, 0) + 1
-# uncomment here and in the go to config.py line 44 and do the change that is commented
-    # def compute_stabilisation_score(self, diversity: float) -> float:
-    #     normalised_conf = min(1.0, self.confirmation_count / 10.0)
-    #     self.diversity_score = diversity
-    #     self.stabilisation_score = normalised_conf * diversity
-    #     return self.stabilisation_score
-    
+
     def compute_stabilisation_score(self, diversity: float) -> float:
         normalised_conf = min(1.0, self.confirmation_count / 10.0)
         self.diversity_score = diversity
-        self.stabilisation_score = normalised_conf  # ignore diversity for now
+        self.stabilisation_score = normalised_conf * diversity
         return self.stabilisation_score
 
     @property
