@@ -323,7 +323,7 @@ Fixed in `nbsi_v1_lightweight/`, not yet backported to `nbsi/`.
 | 3 | ✅ Complete | Synthesis — llama-cpp, Qwen2.5-1.5B + Phi-3 Mini verified |
 | 4 | ✅ Complete | Document ingestion — chunker, structure-aware readers, metadata nodes, multi-document pipeline — 40/40 tests |
 | 5 | ✅ Complete |OS integration — file reader, directory watcher, ingestion worker — 21/21 tests |
-| 6 | 🔲 Pending | Persistence across sessions |
+| 6 | ✅ Complete | Persistence — save_library / load_library / library_info |
 | 7 | 🔲 Pending | Full orchestration via main.py |
 
 ---
@@ -336,9 +336,14 @@ git checkout main      # Phases 1 and 2 — stable base
 git checkout phase_3   # Phase 3 — synthesis added
 git checkout phase_4   # Phase 4 — Document ingestion added
 git checkout phase_5   # Phase 5 — OS integration added
+git checkout phase_6   # Phase 6 — Persistence added
+
 
 ```
 
+---
+# Library persists across sessions at ~/.nbsi/library.json
+# Run multiple sessions against the same documents to accumulate structural nodes
 ---
 
 ## Note on Python version

@@ -33,6 +33,7 @@ Requirements (synthesis):
 import sys
 import os
 import time
+from nbsi.session.persistence import save_library
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -227,6 +228,8 @@ def run_demo(query: str, use_synthesis: bool = True,
     print(f"  Graph destroyed:          {summary['session_graph_destroyed']}")
     print(f"  Nodes remaining in graph: {session.graph.node_count}")
     print(f"  Structural library:       {summary['structural_library']['total_structural_nodes']} nodes (persists)")
+    save_result = save_library(library, os.path.expanduser("~/.nbsi/library.json"))
+    print(f"  Library saved:            {save_result['nodes_saved']} nodes → {save_result['path']}")
     print("="*65 + "\n")
 
 
