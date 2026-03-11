@@ -116,6 +116,9 @@ uv pip install python-docx
 
 # Optional — for synthesis (local LLM narration)
 uv pip install llama-cpp-python
+
+# for the phase 5 os integration
+uv pip install watchdog
 ```
 
 ### Run the demo
@@ -319,7 +322,7 @@ Fixed in `nbsi_v1_lightweight/`, not yet backported to `nbsi/`.
 | 2 | ✅ Complete | Real embeddings + spaCy extraction + bug fixes |
 | 3 | ✅ Complete | Synthesis — llama-cpp, Qwen2.5-1.5B + Phi-3 Mini verified |
 | 4 | ✅ Complete | Document ingestion — chunker, structure-aware readers, metadata nodes, multi-document pipeline — 40/40 tests |
-| 5 | ✅ Built, pending integration | OS integration — file reader, directory watcher, ingestion worker — 21/21 tests |
+| 5 | ✅ Complete |OS integration — file reader, directory watcher, ingestion worker — 21/21 tests |
 | 6 | 🔲 Pending | Persistence across sessions |
 | 7 | 🔲 Pending | Full orchestration via main.py |
 
@@ -332,6 +335,8 @@ Checkout a specific phase to see the project at that exact stage:
 git checkout main      # Phases 1 and 2 — stable base
 git checkout phase_3   # Phase 3 — synthesis added
 git checkout phase_4   # Phase 4 — Document ingestion added
+git checkout phase_5   # Phase 5 — OS integration added
+
 ```
 
 ---
