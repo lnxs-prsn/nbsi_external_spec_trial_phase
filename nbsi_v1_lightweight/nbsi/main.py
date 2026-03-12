@@ -159,15 +159,40 @@ def _build_session(embedder, library, lifecycle):
     session.lifecycle = lifecycle
     return session
 
+# remove later
+# def _start_watcher(watch_folder: str, ingest_queue: queue.Queue):
+#     """Start FileWatcher on watch_folder. Returns watcher or None."""
+#     if not watch_folder:
+#         return None
+
+#     watch_folder = os.path.expanduser(watch_folder)
+#     if not os.path.isdir(watch_folder):
+#         print(f"[!] Watch folder does not exist: {watch_folder}")
+#         print(f" Create it and drop files in to ingest automatically.")
+#         try:
+#             os.makedirs(watch_folder, exist_ok=True)
+#             print(f" Created: {watch_folder}")
+#         except Exception as e:
+#             print(f" Could not create folder: {e}")
+#             return None
+
+#     try:
+#         from nbsi.os_integration.watcher import FileWatcher
+#         watcher = FileWatcher(watch_folder, ingest_queue)
+#         watcher.start()
+#         print(f"[3/4] Watching: {watch_folder}")
+#         return watcher
+#     except Exception as e:
+#         print(f"[!] Could not start watcher: {e}")
+#         return None
 def _start_watcher(watch_folder: str, ingest_queue: queue.Queue):
-    """Start FileWatcher on watch_folder. Returns watcher or None."""
+    """Start file watcher on watch_folder. Returns observer or None."""
     if not watch_folder:
         return None
 
     watch_folder = os.path.expanduser(watch_folder)
     if not os.path.isdir(watch_folder):
         print(f"[!] Watch folder does not exist: {watch_folder}")
-        print(f" Create it and drop files in to ingest automatically.")
         try:
             os.makedirs(watch_folder, exist_ok=True)
             print(f" Created: {watch_folder}")
@@ -176,14 +201,18 @@ def _start_watcher(watch_folder: str, ingest_queue: queue.Queue):
             return None
 
     try:
-        from nbsi.os_integration.watcher import FileWatcher
-        watcher = FileWatcher(watch_folder, ingest_queue)
-        watcher.start()
+        # from nbsi.os_integration.watcher import start_watcher     # replaced
+        # observer = start_watcher(watch_folder, ingest_queue)
+        from nbsi.os_integration.watcher import start_watcher, scan_existing
+        observer = start_watcher(watch_folder, ingest_queue)
+        scan_existing(watch_folder, ingest_queue)  # Add this line
         print(f"[3/4] Watching: {watch_folder}")
-        return watcher
+        return observer
     except Exception as e:
         print(f"[!] Could not start watcher: {e}")
         return None
+
+
 
 def _ingest_startup_files(session, extractor, file_paths: list) -> None:
     """Ingest files specified at startup via --files."""
@@ -357,8 +386,11 @@ def run(args) -> None:
     # -- Graceful shutdown on Ctrl+C
     def _shutdown(sig=None, frame=None):
         print("\n\n[Shutting down...]")
+        # if watcher:       # replaced remove later
+        #     watcher.stop()
         if watcher:
             watcher.stop()
+            watcher.join()
         worker.stop()
         summary = session.end_session()
         lib_nodes = summary['structural_library']['total_structural_nodes']

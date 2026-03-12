@@ -95,7 +95,7 @@ def run_demo(text: str, query: str):
     print("\n[2/4] Extracting graph from text (spaCy + MiniLM)...")
     t0 = time.time()
     try:
-        from nbsi.ingestion.spacy_extractor import SpacyExtractor
+        from nbsi_core_reference.ingestion.spacy_extractor import SpacyExtractor
         extractor = SpacyExtractor()
     except OSError as e:
         print(f"\n[!] {e}")
@@ -111,9 +111,9 @@ def run_demo(text: str, query: str):
     # ── Build session and ingest ──────────────────────────────────────
     print("\n[3/4] Building session graph...")
     t0 = time.time()
-    from nbsi.config import Config
-    from nbsi.lifecycle.structural_library import StructuralNodeLibrary
-    from nbsi.session.session import NBSISession
+    from nbsi_core_reference.config import Config
+    from nbsi_core_reference.lifecycle.structural_library import StructuralNodeLibrary
+    from nbsi_core_reference.session.session import NBSISession
 
     config = Config()
     config.MAX_NODES = 700
