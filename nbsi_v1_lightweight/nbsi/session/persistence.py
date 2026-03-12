@@ -10,11 +10,16 @@ What is saved:
    diversity_score, stabilisation_score, sessions_active, example_labels,
    entity_firing_counts
  - Library metadata: version, saved_at, node_count, observation_count
-
+ 
 What is NOT saved:
  - Any content, labels, or raw embeddings from sessions
  - The ConceptGraph, edges, or any operational layer state
- - Session distributions or entity counts (recomputed fresh each session)
+ - Entity counts (recomputed fresh each session)
+
+What is saved across sessions:
+ - StructuralNode geometry (centroids only)
+ - ObservationNode state (confirmation counts, diversity scores, embeddings)
+ - Session degree distributions per observation node (needed for Wasserstein diversity scoring)
 
 Format: JSON — human-readable, inspectable, no binary blobs.
 

@@ -5,7 +5,7 @@
 You need:
 - A terminal (Command Prompt or PowerShell on Windows)
 - Git
-- About 2GB free disk space (more if you want the local LLM)
+- About 8GB free disk space (more if you want the local LLM)
 
 That is all. You do not need Python installed — the setup instructions below handle it.
 
@@ -83,6 +83,9 @@ Windows:
 
 Then install:
 ```bash
+# Optional: install CPU-only torch first to save ~3GB disk space (untested)
+# uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+
 uv pip install spacy sentence-transformers networkx numpy scipy watchdog python-docx pdfminer.six
 uv pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 ```
@@ -167,6 +170,8 @@ PYTHONPATH=.. python demo.py yourfile.pdf "your question"
 
 ## Run the tests
 ```bash
+uv pip install pytest
+
 # From inside nbsi_v1_lightweight/nbsi/
 PYTHONPATH=.. python run_tests.py
 # Expected: 33 passed
