@@ -1,184 +1,81 @@
 # NBSI — Node-Based Semantic Intelligence
 ### Implementation Repository
+A local document reasoning tool. Give it documents, ask questions, get answers traced through the actual structure of what you gave it.
 
-A session-based graph reasoning engine with structural persistence.  
-Runs entirely on CPU. No GPU. No API calls. No content stored between sessions.
+No internet connection required after setup. No API calls. No data leaves your machine.
 
 **Papers and theory:** https://github.com/lnxs-prsn/nbsi_theory_and_plan  
 **Live overview:** https://huggingface.co/spaces/Node-Based-S-I/the_theory
 
 ---
 
+## What it does
+
+You give it one or more documents — PDF, Word, plain text, HTML. It reads them, builds a concept graph, and lets you query that graph. Answers are reasoning paths — traces through connected concepts in your documents — not generated text.
+
+Optionally a small local language model narrates those paths in plain English.
+
+Over multiple sessions it builds a structural layer — patterns that kept appearing across different documents get promoted into persistent landmarks. The more you use it on related material the better it orients itself.
+
+## What it does not do
+
+- It does not chat or have a conversation
+- It does not search the internet
+- It does not remember the content of your documents — only geometric patterns
+- The structural layer takes many sessions to develop — do not expect it after one run
+
+## Hardware
+
+Runs on CPU only. Tested on:
+- Linux laptop (Fedora)
+- Raspberry Pi 5
+
+Minimum: 4GB RAM. The embedding model loads ~500MB into memory. The optional local LLM needs an additional 1-3GB depending on model.
+
+## Who this is for
+
+You need to be comfortable with a terminal. If you can run `git clone` and follow install instructions you can run this. No Python experience required beyond that.
+
+---
+
+## Getting started
+
+→ See [INSTALL.md](nbsi_v1_lightweight/INSTALL.md) for full setup instructions for Linux, macOS, Windows, and Raspberry Pi.
+
+---
+
 ## Repository structure
-
-This repository contains two independent but related projects that evolved
-sequentially. Each is a complete, self-contained Python package.
-
 ```
 nbsi_external_spec_trial_phase/
 │
-├── nbsi/                        # Project 1 — Core engine
-│   ├── run_tests.py             #   33 tests, stdlib only, no ML deps
-│   ├── config.py                #   All parameters
-│   ├── embedder.py              #   StubEmbedder (tests) + RealEmbedder (MiniLM)
-│   ├── graph/                   #   ConceptGraph, ConceptNode, ConceptEdge
-│   ├── sem/                     #   SEMPropagator, SpeculativeNode
-│   ├── lifecycle/               #   LifecycleEngine, StructuralNodeLibrary
-│   ├── reasoning/               #   ConductivityEngine, BeamSearch, QueryEngine
-│   ├── session/                 #   NBSISession — orchestrates both layers
-│   └── tests/                   #   Full test suite
+├── README.md                        # This file
+├── LICENSE
 │
-├── nbsi_v1_lightweight/         # Project 2 — Lightweight stack
-│   └── nbsi/
-│       ├── demo.py              #   Start here — run against any document
-│       ├── ingestion/           #   spaCy extraction pipeline
-│       │   └── spacy_extractor.py
-│       ├── synthesis/           #   llama-cpp synthesis (Phase 3 — not yet built)
-│       ├── os_integration/      #   File watcher (Phase 5 — not yet built)
-│       └── ...                  #   All core engine files (updated versions)
+├── nbsi_v1_lightweight/             # The project — start here
+│   ├── INSTALL.md                   # Full installation instructions
+│   ├── nbsi/
+│   │   ├── demo.py                  # Quick start — run against any document
+│   │   ├── main.py                  # Interactive session with persistent library
+│   │   ├── config.py
+│   │   ├── ingestion/               # Document reading and concept extraction
+│   │   ├── lifecycle/               # Structural layer — observation and promotion
+│   │   ├── os_integration/          # File watcher and ingestion worker
+│   │   ├── reasoning/               # Beam search and conductivity scoring
+│   │   ├── sem/                     # Speculation and rollback
+│   │   ├── session/                 # Session management and persistence
+│   │   ├── synthesis/               # Optional local LLM narration
+│   │   └── tests/                   # All tests
+│   ├── run_diversity_test.sh        # Automated multi-session diversity testing
+│   └── the_file_folder/             # Sample documents for testing
 │
-├── zfixed1/                     # Patched files from Phase 2 bug fixes
-├── zfixed2/                     # Patched files from Phase 2 bug fixes
-├── zphases_1_to_7/              # Build progress documentation
-└── zqueries/                    # Test queries used during verification
+└── zcumulative_changes/             # Build history and patch notes
 ```
 
 ---
 
-## Which project should I use?
+## Build history
 
-| I want to... | Use |
-|---|---|
-| Verify the core engine works | `nbsi/` — run `run_tests.py` |
-| Run reasoning on a real document | `nbsi_v1_lightweight/nbsi/` — run `demo.py` |
-| Build on the architecture | Start with `nbsi_v1_lightweight/` — it has all fixes applied |
-| Understand the internals | Start with `nbsi/` — cleaner, fully tested, no ML deps |
-
-**Important:** `nbsi_v1_lightweight/` contains updated versions of the core
-engine files with three bug fixes applied that are not yet in `nbsi/`.
-If you are building on this project, use the lightweight directory as your base.
-
----
-
-## Project 1 — Core engine (`nbsi/`)
-
-The pure engine. No spaCy. No sentence-transformers. Just the graph, the
-lifecycle, the SEM operator, and beam search. Three dependencies only.
-
-### Setup
-
-```bash
-cd nbsi
-
-uv venv --python 3.12
-source .venv/bin/activate
-
-uv pip install networkx numpy scipy
-```
-
-### Verify
-
-```bash
-PYTHONPATH=. python run_tests.py
-```
-
-Expected output:
-
-```
-======================================================================
-  NBSI v1.0 — Test Suite
-======================================================================
-  ✓  Graph: add_node returns id and increments count
-  ... (33 tests)
-======================================================================
-  Results: 33 passed, 0 failed, 33 total
-======================================================================
-```
-
-### Note on Python version
-
-Python 3.14 is not supported — spaCy (used in Project 2) does not yet
-support it. Use Python 3.11 or 3.12.
-
-```bash
-uv python install 3.12
-uv venv --python 3.12
-```
-
----
-
-## Project 2 — Lightweight stack (`nbsi_v1_lightweight/nbsi/`)
-
-The full CPU stack. spaCy extracts nodes and edges from documents. MiniLM
-provides real semantic embeddings. The core engine reasons over the graph.
-No GPU. No API calls.
-
-### Setup
-
-```bash
-cd nbsi_v1_lightweight/nbsi
-
-uv venv --python 3.12
-source .venv/bin/activate
-
-uv pip install spacy sentence-transformers networkx numpy scipy
-uv pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
-```
-
-### Run the demo
-
-```bash
-# Built-in sample text — no file needed
-PYTHONPATH=. python demo.py
-
-# Your own text, PDF, or DOCX file
-PYTHONPATH=. python demo.py yourfile.txt
-
-# Your own file with your own query
-PYTHONPATH=. python demo.py yourfile.txt "your question here"
-```
-
-### Verify core tests still pass
-
-```bash
-PYTHONPATH=. python run_tests.py   # 33/33
-```
-
-### Supported document formats
-
-| Format | Extension | Extra dependency |
-|---|---|---|
-| Plain text | .txt .md .py | None |
-| PDF | .pdf | `uv pip install pdfminer.six` |
-| Word document | .docx | `uv pip install python-docx` |
-
----
-
-## Verified results
-
-Tested against the NBSI External Architecture Paper (19724 chars, 838 nodes extracted):
-
-| Query | Paths | Top conductivity |
-|---|---|---|
-| what is the structural layer | 5 | 0.442 |
-| how does speculation change the graph | 3 | 0.490 |
-| what happens at session end | 5 | 0.595 |
-| should the session graph persist | 5 | 0.490 |
-
-**SEM verified:**
-- 46 edges affected on semantically relevant speculation
-- Conductivity change: -0.058 confirmed
-- Direction correct: graph resisted speculation contradicting source material
-- Rollback tolerance: 0.00e+00
-
----
-
-## Bug fixes applied in `nbsi_v1_lightweight/`
-
-Three bugs were found and fixed during real-document testing in Phase 2.
-These fixes are in `nbsi_v1_lightweight/` but not yet backported to `nbsi/`.
-
-| File | Fix |
+| Phase | Description |
 |---|---|
 | `sem/propagator.py` | Speculative node now anchored to similar existing nodes before BFS — was an island, propagation never fired |
 | `graph/concept_graph.py` | `add_edge` guards both endpoints against `_nodes` — phantom edges caused zero hop scores and 0 paths found |
@@ -255,10 +152,3 @@ Destroyed at session end   Persists forever
 
 Code: GNU General Public License v3.0  
 Papers: Creative Commons Attribution 4.0 International (CC BY 4.0)
-
----
-
-## Links
-
-- **Theory and papers:** https://github.com/lnxs-prsn/nbsi_theory_and_plan
-- **Hugging Face:** https://huggingface.co/spaces/Node-Based-S-I/the_theory

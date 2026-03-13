@@ -1,27 +1,30 @@
 """
-NBSI v1.0 Lightweight — Demo
+NBSI v1.0 Lightweight — Demo (FIXED)
 
-Ingests a document using spaCy + MiniLM.
-Queries the resulting graph.
-Returns real reasoning paths with conductivity scores.
+Ingests a document using the Phase 4 pipeline with PERSISTENT observation nodes.
 
-NO API calls. NO LLM. NO GPU required.
+NO API calls. NO GPU required.
 
 Usage:
-    python3 demo.py                        # Uses built-in sample text
-    python3 demo.py myfile.txt             # Uses your own text file
-    python3 demo.py myfile.txt "your query" # Custom query too
+ python demo.py                    # Built-in sample text
+ python demo.py myfile.txt       # Your own file
+ python demo.py myfile.txt "your query"   # Custom query
+ python demo.py myfile.txt "query" --no-synth  # Skip synthesis
 
-Requirements:
-    pip install spacy sentence-transformers networkx numpy scipy
-    python -m spacy download en_core_web_sm
+Supported file formats:
+ .txt .md .html .htm .pdf .docx .py .js .ts .rst
 """
 import sys
 import os
 import time
 
-# Allow running from the nbsi directory directly
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+DEFAULT_MODEL = os.path.expanduser(
+    "~/nbsi-models/qwen2.5-1.5b-instruct-q4_k_m.gguf"
+)
+
+LIBRARY_PATH = os.path.expanduser("~/.nbsi/library.json")
 
 SAMPLE_TEXT = """
 Artificial intelligence is transforming the modern world through machine learning and
@@ -50,50 +53,24 @@ Researchers are working on methods to ensure AI systems behave as intended and r
 under human control. These safety measures are critical as AI becomes more capable.
 """
 
-
-def load_text(path: str) -> str:
-    ext = os.path.splitext(path)[1].lower()
-    if ext == '.pdf':
-        try:
-            from pdfminer.high_level import extract_text
-            return extract_text(path)
-        except ImportError:
-            print("[!] pdfminer.six not installed. Install with: pip install pdfminer.six")
-            sys.exit(1)
-    elif ext == '.docx':
-        try:
-            from docx import Document
-            doc = Document(path)
-            return '\n'.join(p.text for p in doc.paragraphs if p.text.strip())
-        except ImportError:
-            print("[!] python-docx not installed. Install with: pip install python-docx")
-            sys.exit(1)
-    else:
-        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
-            return f.read()
-
-
-def run_demo(text: str, query: str):
+def run_demo(query: str, use_synthesis: bool = True,
+             file_path: str = None, sample_text: str = None):
     print("\n" + "="*65)
-    print("  NBSI v1.0 Lightweight — Demo")
-    print("  spaCy extraction · MiniLM embedding · No API calls")
+    print(" NBSI v1.0 Lightweight -- Demo (FIXED with persistent observations)")
+    print(" spaCy · MiniLM · Local graph reasoning · llama-cpp")
     print("="*65)
 
-    # ── Load embedder ─────────────────────────────────────────────────
+    # -- [1/4] Load embedder and extractor
     print("\n[1/4] Loading MiniLM embedder...")
     t0 = time.time()
     try:
         from nbsi.embedder import RealEmbedder
         embedder = RealEmbedder()
-        print(f"      Ready ({time.time()-t0:.1f}s)")
+        print(f" Ready ({time.time()-t0:.1f}s)")
     except ImportError as e:
         print(f"\n[!] {e}")
-        print("    Install with: pip install sentence-transformers")
         sys.exit(1)
 
-    # ── Extract nodes and edges ───────────────────────────────────────
-    print("\n[2/4] Extracting graph from text (spaCy + MiniLM)...")
-    t0 = time.time()
     try:
         from nbsi.ingestion.spacy_extractor import SpacyExtractor
         extractor = SpacyExtractor()
@@ -101,109 +78,188 @@ def run_demo(text: str, query: str):
         print(f"\n[!] {e}")
         sys.exit(1)
 
-    nodes, edges = extractor.extract(text, embedder)
-    print(f"      {len(nodes)} nodes · {len(edges)} edges extracted ({time.time()-t0:.1f}s)")
-
-    if not nodes:
-        print("\n[!] No nodes extracted. Text may be too short or lack noun phrases.")
-        sys.exit(1)
-
-    # ── Build session and ingest ──────────────────────────────────────
-    print("\n[3/4] Building session graph...")
-    t0 = time.time()
+    # -- [2/4] Load or create library WITH observation nodes (FIXED)
     from nbsi.config import Config
     from nbsi.lifecycle.structural_library import StructuralNodeLibrary
     from nbsi.session.session import NBSISession
+    from nbsi.session.persistence import load_library, save_library, library_info
 
     config = Config()
     config.MAX_NODES = 700
     config.BEAM_WIDTH = 8
     config.TOP_K_PATHS = 5
 
-    library = StructuralNodeLibrary()
-    session = NBSISession(
-        structural_library=library,
-        embedder=embedder,
-        config=config,
-    )
+    # FIXED: Load existing library with observation nodes, or create fresh
+    info = library_info(LIBRARY_PATH)
+    if info:
+        print(f"\n[2/4] Loading library: {info['node_count']} structural nodes, "
+              f"{info.get('observation_count', 0)} observation nodes "
+              f"(saved {info['saved_at'][:19]})")
+        try:
+            library, lifecycle = load_library(LIBRARY_PATH, embedder, config)
+            print(f" Loaded {len(library.nodes)} structural nodes, "
+                  f"{len(lifecycle._observation_nodes)} observation nodes")
+        except Exception as e:
+            print(f"[!] Could not load library ({e}) -- starting fresh")
+            library = StructuralNodeLibrary()
+            from nbsi.lifecycle.lifecycle_engine import LifecycleEngine
+            lifecycle = LifecycleEngine(library, embedder, config)
+    else:
+        print(f"\n[2/4] No library found -- starting fresh")
+        library = StructuralNodeLibrary()
+        from nbsi.lifecycle.lifecycle_engine import LifecycleEngine
+        lifecycle = LifecycleEngine(library, embedder, config)
 
-    result = session.ingest_graph(nodes, edges)
-    print(f"      Graph built: {result['nodes']} nodes · {result['edges']} edges ({time.time()-t0:.1f}s)")
-    print(f"      Structural nodes firing: {result['structural_nodes_firing']}")
-    print(f"      Observation nodes created: {result['observation_nodes_created']}")
+    # Create session with loaded library
+    session = NBSISession(structural_library=library, embedder=embedder, config=config)
+    # FIXED: Attach the loaded lifecycle (with observation nodes) to session
+    session.lifecycle = lifecycle
 
-    # ── Query ─────────────────────────────────────────────────────────
+    # -- [3/4] Ingest
+    if file_path:
+        print(f"\n[3/4] Ingesting {os.path.basename(file_path)} via pipeline...")
+        t0 = time.time()
+        from nbsi.ingestion.pipeline import ingest_documents
+        report = ingest_documents(session, extractor, [file_path], verbose=False)
+
+        if report.files_failed:
+            print(f"\n[!] Failed to ingest {file_path}")
+            print(f" {report.results[0].error}")
+            sys.exit(1)
+
+        r = report.results[0]
+        print(f" {r.chunks} chunks · {r.nodes_added} nodes · "
+              f"{r.edges_added} edges ({time.time()-t0:.1f}s)")
+        print(f" Format: {r.format}")
+
+    else:
+        print("\n[3/4] Extracting graph from sample text (spaCy + MiniLM)...")
+        t0 = time.time()
+        nodes, edges = extractor.extract(sample_text, embedder)
+        print(f" {len(nodes)} nodes · {len(edges)} edges ({time.time()-t0:.1f}s)")
+
+        if not nodes:
+            print("\n[!] No nodes extracted. Text may be too short.")
+            sys.exit(1)
+
+        print("\n Building session graph...")
+        t0 = time.time()
+        result = session.ingest_graph(nodes, edges)
+        print(f" Graph: {result['nodes']} nodes · {result['edges']} edges "
+              f"({time.time()-t0:.1f}s)")
+        print(f" Structural nodes firing: {result['structural_nodes_firing']}")
+        print(f" Observation nodes created: {result['observation_nodes_created']}")
+
+    # -- [4/4] Query
     print(f"\n[4/4] Querying: \"{query}\"")
     t0 = time.time()
     paths = session.query(query)
     elapsed = time.time() - t0
 
-    print(f"      {len(paths)} paths found ({elapsed*1000:.1f}ms)\n")
+    print(f" {len(paths)} paths found ({elapsed*1000:.1f}ms)\n")
 
     if not paths:
-        print("  No paths found. Try a different query or a longer document.")
+        print(" No paths found. Try a different query or a longer document.")
     else:
-        print("  Reasoning paths (highest conductivity first):")
-        print("  " + "-"*60)
+        print(" Reasoning paths (highest conductivity first):")
+        print(" " + "-"*60)
         for i, p in enumerate(paths, 1):
-            chain = " → ".join(p["path"])
-            conf  = p["conductivity"]
-            hops  = p["length"] - 1
-            print(f"\n  Path {i}  [{conf:.3f} conductivity · {hops} hop{'s' if hops!=1 else ''}]")
-            print(f"  {chain}")
+            chain = " -> ".join(p["path"])
+            conf = p["conductivity"]
+            hops = p["length"] - 1
+            print(f"\n Path {i} [{conf:.3f} conductivity · "
+                  f"{hops} hop{'s' if hops!=1 else ''}]")
+            print(f" {chain}")
 
-    # ── Speculation demo ──────────────────────────────────────────────
-    print("\n" + "-"*65)
-    print("  Speculation demo")
-    print("-"*65)
-    # commented out is for the initial test
-    # spec_statement = "quantum computing will make current AI methods obsolete"
-    # below is for the document nbsi_v1_lightweight/nbsi/NBSI_External_Paper.docx  specific statement
+    # -- Synthesis
+    if use_synthesis and paths:
+        print("\n" + "="*65)
+        print(" Synthesis -- local LLM narration")
+        print("="*65)
+
+        model_path = os.environ.get("NBSI_MODEL", DEFAULT_MODEL)
+
+        if not os.path.exists(model_path):
+            print(f"\n [!] Model not found at: {model_path}")
+            print(f" Download with:")
+            print(f" mkdir -p ~/nbsi-models")
+            print(f" wget -P ~/nbsi-models https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf")
+            print("\n Skipping synthesis. Run with --no-synth to suppress this message.")
+        else:
+            try:
+                from nbsi.synthesis.synthesiser import Synthesiser
+                synth = Synthesiser(model_path, n_threads=4, verbose=False)
+
+                print(f"\n Narrating paths for: \"{query}\"")
+                print(" (this takes 20-40 seconds on CPU -- streaming output below)\n")
+                print(" " + "-"*60)
+                print(" ", end="", flush=True)
+
+                for token in synth.narrate_streaming(query, paths):
+                    print(token, end="", flush=True)
+                print("\n " + "-"*60)
+
+            except ImportError:
+                print("\n [!] llama-cpp-python not installed.")
+                print(" Install with: uv pip install llama-cpp-python")
+
+    # -- Speculation demo
+    print("\n" + "="*65)
+    print(" Speculation demo")
+    print("="*65)
     spec_statement = "the session graph should persist across sessions for better continuity"
-    print(f"\n  Adding: \"{spec_statement}\"")
+    print(f"\n Adding: \"{spec_statement}\"")
     spec = session.speculate(spec_statement)
-    print(f"  Spec ID: {spec['spec_id'][:12]}...")
-    print(f"  Edges affected: {spec['edges_affected']}")
+    print(f" Spec ID: {spec['spec_id'][:12]}...")
+    print(f" Edges affected: {spec['edges_affected']}")
 
-    print(f"\n  Re-querying after speculation: \"{query}\"")
+    print(f"\n Re-querying after speculation: \"{query}\"")
     paths_after = session.query(query)
     if paths_after:
-        print(f"  Top path conductivity after:  {paths_after[0]['conductivity']:.3f}")
+        print(f" Top path conductivity after: {paths_after[0]['conductivity']:.3f}")
         if paths:
-            print(f"  Top path conductivity before: {paths[0]['conductivity']:.3f}")
+            print(f" Top path conductivity before: {paths[0]['conductivity']:.3f}")
             delta = paths_after[0]['conductivity'] - paths[0]['conductivity']
-            direction = "↑ increased" if delta > 0 else "↓ decreased" if delta < 0 else "unchanged"
-            print(f"  Change: {direction} ({delta:+.3f}) — SEM rewired the graph")
+            direction = "up increased" if delta > 0 else "down decreased" if delta < 0 else "unchanged"
+            print(f" Change: {direction} ({delta:+.3f}) -- SEM rewired the graph")
 
-    print("\n  Rolling back speculation...")
+    print("\n Rolling back speculation...")
     rollback = session.rollback_speculation(spec['spec_id'])
-    print(f"  Rollback tolerance: {rollback['rollback_tolerance']:.2e} (must be < 1e-9: {rollback['tolerance_ok']})")
+    print(f" Rollback tolerance: {rollback['rollback_tolerance']:.2e} "
+          f"(must be < 1e-9: {rollback['tolerance_ok']})")
 
-    # ── Session end ───────────────────────────────────────────────────
-    print("\n" + "-"*65)
+    # -- Session end (FIXED: Save observation nodes too!)
+    print("\n" + "="*65)
     summary = session.end_session()
-    print(f"  Session ended.")
-    print(f"  Graph destroyed:          {summary['session_graph_destroyed']}")
-    print(f"  Nodes remaining in graph: {session.graph.node_count}")
-    print(f"  Structural library:       {summary['structural_library']['total_structural_nodes']} nodes (persists)")
+    print(f" Session ended.")
+    print(f" Graph destroyed: {summary['session_graph_destroyed']}")
+    print(f" Nodes remaining in graph: {session.graph.node_count}")
+    print(f" Structural library: {summary['structural_library']['total_structural_nodes']} nodes")
+
+    # Show observation node status
+    obs_count = len(session.lifecycle._observation_nodes)
+    print(f" Observation nodes (accumulated): {obs_count} nodes")
+
+    # FIXED: Save both library AND lifecycle (with observation nodes)
+    save_result = save_library(library, session.lifecycle, LIBRARY_PATH)
+    print(f" Library saved: {save_result['nodes_saved']} structural, "
+          f"{save_result['observations_saved']} observation nodes → {save_result['path']}")
     print("="*65 + "\n")
 
-
 if __name__ == "__main__":
-    # Parse args
-    text_arg  = sys.argv[1] if len(sys.argv) > 1 else None
+    file_arg = sys.argv[1] if len(sys.argv) > 1 else None
     query_arg = sys.argv[2] if len(sys.argv) > 2 else None
+    no_synth = "--no-synth" in sys.argv
 
-    if text_arg:
-        if not os.path.exists(text_arg):
-            print(f"[!] File not found: {text_arg}")
+    if file_arg and not file_arg.startswith("--"):
+        if not os.path.exists(file_arg):
+            print(f"[!] File not found: {file_arg}")
             sys.exit(1)
-        text = load_text(text_arg)
-        print(f"Loaded: {text_arg} ({len(text)} chars)")
+        print(f"Loaded: {file_arg}")
+        query = query_arg or "what are the main concepts in this document"
+        run_demo(query, use_synthesis=not no_synth, file_path=file_arg)
     else:
-        text = SAMPLE_TEXT
         print("Using built-in sample text (AI overview).")
-        print("To use your own: python3 demo.py yourfile.txt")
-
-    query = query_arg or "what are the challenges facing AI development"
-    run_demo(text, query)
+        print("To use your own: python demo.py yourfile.txt")
+        query = query_arg or "what are the challenges facing AI development"
+        run_demo(query, use_synthesis=not no_synth, sample_text=SAMPLE_TEXT)
