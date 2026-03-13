@@ -77,13 +77,74 @@ nbsi_external_spec_trial_phase/
 
 | Phase | Description |
 |---|---|
-| 1 | Core engine — graph, SEM operator, beam search, lifecycle |
-| 2 | Real embeddings + spaCy extraction + three bug fixes |
-| 3 | Local LLM narration via llama-cpp |
-| 4 | Document ingestion — chunker, structure-aware readers, multi-document pipeline |
-| 5 | OS integration — file watcher, ingestion worker |
-| 6 | Persistence — library saves and loads across sessions |
-| 7 | Full orchestration — main.py, persistent sessions, watcher integration, persistence bug fixes |
+| `sem/propagator.py` | Speculative node now anchored to similar existing nodes before BFS — was an island, propagation never fired |
+| `graph/concept_graph.py` | `add_edge` guards both endpoints against `_nodes` — phantom edges caused zero hop scores and 0 paths found |
+| `session/session.py` | `ingest_graph` remaps merged node IDs in edges — edges were referencing discarded IDs after label merging |
+
+The fixed files are also available individually in `zfixed1/` and `zfixed2/`.
+
+---
+
+## Build phases
+
+| Phase | Status | Description |
+|---|---|---|
+| 1 | ✅ Complete | Core engine — 33/33 tests passing |
+| 2 | ✅ Complete | Real embeddings + spaCy extraction + bug fixes |
+| 3 | 🔲 Pending | Synthesis — llama-cpp local narration |
+| 4 | 🔲 Pending | Document reader expansion |
+| 5 | 🔲 Pending | OS file watcher |
+| 6 | 🔲 Pending | Persistence across sessions |
+| 7 | 🔲 Pending | Full orchestration via main.py |
+
+---
+
+Each completed phase has its own branch in this repository.
+Checkout a specific phase to see the project at that exact stage:
+
+```bash
+git checkout main      # Phases 1 and 2 — stable base
+git checkout phase_3   # Phase 3 — synthesis added
+```
+
+---
+
+
+## Architecture overview
+
+```
+Query
+  ↓
+QueryEngine — finds anchor nodes by semantic similarity
+  ↓
+BeamSearch — explores graph from anchors using conductivity scores
+  ↓
+ConductivityEngine — geometric mean path scoring
+  ↓
+Reasoning paths returned — ranked by conductivity
+
+Speculation (optional, any time during session)
+  ↓
+SEMPropagator — anchors spec node, BFS through graph
+  ↓
+Edge effective_weights shift — base_weights never touched
+  ↓
+Same query returns different paths — graph landscape changed
+  ↓
+Rollback — zero trace, tolerance < 1e-9
+```
+
+**Two layers — never cross:**
+
+```
+Operational layer          Structural layer
+(session-scoped)           (permanent)
+─────────────────          ────────────────
+ConceptGraph               StructuralNodeLibrary
+SEMPropagator              StructuralNodes (centroids only)
+QueryEngine                No content — geometry only
+Destroyed at session end   Persists forever
+```
 
 ---
 
