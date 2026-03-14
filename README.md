@@ -1,3 +1,8 @@
+ITS ALL AI NONSENSE BUT PROJECT WAS FUN WORKING WITH 
+IT HAS NOTHING RELATED TO REASONING. ITS JUST BIASED KNOWLEDGE STORAGE AT BEST. 
+
+
+
 # NBSI — Node-Based Semantic Intelligence
 ### Implementation Repository
 A local document reasoning tool. Give it documents, ask questions, get answers traced through the actual structure of what you gave it.
